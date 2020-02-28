@@ -6,6 +6,7 @@ import java.util.Map;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -65,9 +66,16 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
     try {
       Response<Map<String, List<String>>> response;
       if (!StringUtils.isEmpty(aclToken)) {
-        response = client.getCatalogServices(QueryParams.DEFAULT, aclToken);
+        CatalogServicesRequest catalogServicesRequest = CatalogServicesRequest.newBuilder()
+            .setQueryParams(QueryParams.DEFAULT)
+            .setToken(aclToken)
+            .build();
+        response = client.getCatalogServices(catalogServicesRequest);
       } else {
-        response = client.getCatalogServices(QueryParams.DEFAULT);
+        CatalogServicesRequest catalogServicesRequest = CatalogServicesRequest.newBuilder()
+            .setQueryParams(QueryParams.DEFAULT)
+            .build();
+        response = client.getCatalogServices(catalogServicesRequest);
       }
       tmpHealthy = !response.getValue().isEmpty();
     } catch (Exception e) {
@@ -91,6 +99,5 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
     return "{ clientId = " + getClientId() + ", healthy = " + healthy
         + ", isPrimary = " + isPrimary + " }";
   }
-
 }
 

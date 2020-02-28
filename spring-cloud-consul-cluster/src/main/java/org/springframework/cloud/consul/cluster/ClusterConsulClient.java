@@ -36,6 +36,9 @@ import com.ecwid.consul.v1.agent.model.NewService;
 import com.ecwid.consul.v1.agent.model.Self;
 import com.ecwid.consul.v1.agent.model.Service;
 import com.ecwid.consul.v1.catalog.CatalogClient;
+import com.ecwid.consul.v1.catalog.CatalogNodesRequest;
+import com.ecwid.consul.v1.catalog.CatalogServiceRequest;
+import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import com.ecwid.consul.v1.catalog.model.CatalogDeregistration;
 import com.ecwid.consul.v1.catalog.model.CatalogNode;
 import com.ecwid.consul.v1.catalog.model.CatalogRegistration;
@@ -44,9 +47,12 @@ import com.ecwid.consul.v1.coordinate.CoordinateClient;
 import com.ecwid.consul.v1.coordinate.model.Datacenter;
 import com.ecwid.consul.v1.coordinate.model.Node;
 import com.ecwid.consul.v1.event.EventClient;
+import com.ecwid.consul.v1.event.EventListRequest;
 import com.ecwid.consul.v1.event.model.Event;
 import com.ecwid.consul.v1.event.model.EventParams;
+import com.ecwid.consul.v1.health.HealthChecksForServiceRequest;
 import com.ecwid.consul.v1.health.HealthClient;
+import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.Check;
 import com.ecwid.consul.v1.health.model.Check.CheckStatus;
 import com.ecwid.consul.v1.health.model.HealthService;
@@ -624,42 +630,18 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
 
   @Override
   public Response<List<Check>> getHealthChecksForService(String serviceName,
-      QueryParams queryParams) {
+      HealthChecksForServiceRequest healthChecksForServiceRequest) {
     return retryTemplate
         .execute((RetryCallback<Response<List<Check>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getHealthChecksForService(serviceName, queryParams));
+            .getHealthChecksForService(serviceName, healthChecksForServiceRequest));
   }
 
   @Override
   public Response<List<HealthService>> getHealthServices(String serviceName,
-      boolean onlyPassing, QueryParams queryParams) {
+      HealthServicesRequest healthServicesRequest) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getHealthServices(serviceName, onlyPassing, queryParams));
-  }
-
-  @Override
-  public Response<List<HealthService>> getHealthServices(String serviceName, String tag,
-      boolean onlyPassing, QueryParams queryParams) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
-            serviceName, tag, onlyPassing, queryParams));
-  }
-
-  @Override
-  public Response<List<HealthService>> getHealthServices(String serviceName,
-      boolean onlyPassing, QueryParams queryParams, String token) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
-            serviceName, onlyPassing, queryParams, token));
-  }
-
-  @Override
-  public Response<List<HealthService>> getHealthServices(String serviceName, String tag,
-      boolean onlyPassing, QueryParams queryParams, String token) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
-            serviceName, tag, onlyPassing, queryParams, token));
+            .getHealthServices(serviceName, healthServicesRequest));
   }
 
   @Override
@@ -686,16 +668,9 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
   }
 
   @Override
-  public Response<List<Event>> eventList(QueryParams queryParams) {
+  public Response<List<Event>> eventList(EventListRequest eventListRequest) {
     return retryTemplate
-        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(queryParams));
-  }
-
-  @Override
-  public Response<List<Event>> eventList(String event, QueryParams queryParams) {
-    return retryTemplate
-        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(event,
-            queryParams));
+        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(eventListRequest));
   }
 
   @Override
@@ -740,58 +715,26 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
 
   @Override
   public Response<List<com.ecwid.consul.v1.catalog.model.Node>> getCatalogNodes(
-      QueryParams queryParams) {
+      CatalogNodesRequest catalogNodesRequest) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<com.ecwid.consul.v1.catalog.model.Node>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogNodes(queryParams));
+            .getCatalogNodes(catalogNodesRequest));
   }
 
   @Override
   public Response<Map<String, List<String>>> getCatalogServices(
-      QueryParams queryParams) {
+      CatalogServicesRequest catalogServicesRequest) {
     return retryTemplate.execute(
         (RetryCallback<Response<Map<String, List<String>>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogServices(queryParams));
-  }
-
-  @Override
-  public Response<Map<String, List<String>>> getCatalogServices(QueryParams queryParams,
-      String token) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<Map<String, List<String>>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogServices(queryParams, token));
+            .getCatalogServices(catalogServicesRequest));
   }
 
   @Override
   public Response<List<CatalogService>> getCatalogService(String serviceName,
-      QueryParams queryParams) {
+      CatalogServiceRequest catalogServiceRequest) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogService(serviceName, queryParams));
-  }
-
-  @Override
-  public Response<List<CatalogService>> getCatalogService(String serviceName,
-      String tag, QueryParams queryParams) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogService(serviceName, tag, queryParams));
-  }
-
-  @Override
-  public Response<List<CatalogService>> getCatalogService(String serviceName,
-      QueryParams queryParams, String token) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogService(serviceName, queryParams, token));
-  }
-
-  @Override
-  public Response<List<CatalogService>> getCatalogService(String serviceName,
-      String tag, QueryParams queryParams, String token) {
-    return retryTemplate.execute(
-        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogService(serviceName, tag, queryParams, token));
+            .getCatalogService(serviceName, catalogServiceRequest));
   }
 
   @Override

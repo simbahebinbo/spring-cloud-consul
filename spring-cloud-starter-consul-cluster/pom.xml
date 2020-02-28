@@ -5,11 +5,12 @@
   <parent>
     <groupId>com.github.lansheng228</groupId>
     <artifactId>spring-cloud-consul</artifactId>
-    <version>2.1.2.SNAPSHOT</version>
+    <version>2.2.1.RELEASE</version>
   </parent>
   <artifactId>spring-cloud-starter-consul-cluster</artifactId>
   <name>spring-cloud-starter-consul-cluster</name>
-  <description>Cluster ConsulClient implementation for spring-cloud-consul(discovery、registry)
+  <description>Cluster ConsulClient implementation for
+    spring-cloud-consul(config、discovery、registry)
   </description>
 
   <dependencies>
@@ -34,10 +35,10 @@
       <artifactId>spring-cloud-consul-core</artifactId>
     </dependency>
 
-<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-consul-config</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-consul-config</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.cloud</groupId>

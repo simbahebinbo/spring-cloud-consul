@@ -5,11 +5,12 @@
   <parent>
     <groupId>com.github.lansheng228</groupId>
     <artifactId>spring-cloud-consul</artifactId>
-    <version>2.1.2.SNAPSHOT</version>
+    <version>2.2.1.RELEASE</version>
   </parent>
   <artifactId>spring-cloud-consul-cluster</artifactId>
   <name>spring-cloud-consul-cluster</name>
-  <description>Cluster ConsulClient implementation for spring-cloud-consul(discovery、registry)
+  <description>Cluster ConsulClient implementation for
+    spring-cloud-consul(config、discovery、registry)
   </description>
 
   <dependencies>
@@ -33,6 +34,12 @@
 
     <dependency>
       <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-context</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-consul-core</artifactId>
       <optional>true</optional>
     </dependency>
@@ -45,45 +52,21 @@
 
     <dependency>
       <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-netflix-ribbon</artifactId>
+      <artifactId>spring-cloud-consul-config</artifactId>
       <optional>true</optional>
     </dependency>
 
-<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-commons</artifactId>
-			<optional>true</optional>
-		</dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-netflix-ribbon</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
       <optional>true</optional>
     </dependency>
-
-<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-consul-config</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-consul-discovery</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-netflix-ribbon</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-core</artifactId>
-			<optional>true</optional>
-		</dependency>
 
     <dependency>
       <groupId>org.springframework</groupId>

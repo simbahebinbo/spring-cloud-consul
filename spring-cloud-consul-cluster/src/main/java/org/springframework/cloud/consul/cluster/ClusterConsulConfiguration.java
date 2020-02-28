@@ -46,7 +46,7 @@ public class ClusterConsulConfiguration {
   public void init() {
     if (StringUtils.isEmpty(nodes)) {
       log.error("spring.cloud.consul.cluster.nodes cannot be null");
-      throw new RuntimeException("spring.cloud.consul.cluster.nodes cannot be null");
+      throw new BadConfigException("spring.cloud.consul.cluster.nodes cannot be null");
     }
 
     clusterNodes = Arrays.stream(nodes.split(CommonConstant.SEPARATOR_COMMA)).filter(StringUtils::isNotEmpty)
@@ -54,7 +54,7 @@ public class ClusterConsulConfiguration {
 
     if (CollectionUtils.isEmpty(clusterNodes)) {
       log.error("spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080");
-      throw new RuntimeException("spring.cloud.consul.cluster.nodes config error.");
+      throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
     }
 
     if (StringUtils.isEmpty(mode)) {
@@ -62,7 +62,7 @@ public class ClusterConsulConfiguration {
     } else {
       if (NodeModeEnum.findByValue(mode) == null) {
         log.error("spring.cloud.consul.cluster.mode config error. For example: client or server or all");
-        throw new RuntimeException("spring.cloud.consul.cluster.mode config error.");
+        throw new BadConfigException("spring.cloud.consul.cluster.mode config error.");
       }
     }
   }
