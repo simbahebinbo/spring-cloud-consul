@@ -101,7 +101,7 @@ consul的使用守则是应用程序与consul client共生死(部署在一起,�
 
 # 版本
 
-当前基于spring-cloud-consul 2.2.1.RELEASE版本
+当前基于spring-cloud-consul 2.2.1.1.RELEASE版本
 
 # 使用方法
 
@@ -114,7 +114,7 @@ consul的使用守则是应用程序与consul client共生死(部署在一起,�
 	<dependency>
 		<groupId>com.github.lansheng228</groupId>
 		<artifactId>spring-cloud-starter-consul-cluster</artifactId>
-		<version>2.2.1.RELEASE</version>
+		<version>2.2.1.1.RELEASE</version>
 	</dependency>
 
 ````
