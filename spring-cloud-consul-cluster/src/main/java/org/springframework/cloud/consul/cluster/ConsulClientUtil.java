@@ -10,6 +10,9 @@ import com.google.common.hash.Hashing;
 
 import com.ecwid.consul.transport.TLSConfig;
 import com.ecwid.consul.v1.ConsulClient;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.consul.ConsulProperties;
@@ -18,6 +21,8 @@ import org.springframework.util.Assert;
 /**
  * ConsulClient工具类
  */
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConsulClientUtil {
 
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
@@ -56,18 +61,24 @@ public class ConsulClientUtil {
    */
   public static ConsulClient createConsulClient(ConsulProperties consulProperties) {
     final int agentPort = consulProperties.getPort();
-    final String agentHost = !StringUtils.isEmpty(consulProperties.getScheme())
-        ? consulProperties.getScheme() + CommonConstant.SEPARATOR_COLON + StringUtils.repeat(CommonConstant.SEPARATOR_VIRGULE, 2) + consulProperties
-        .getHost()
-        : consulProperties.getHost();
+    final String agentHost = StringUtils.isEmpty(consulProperties.getScheme())
+        ? consulProperties.getHost()
+        : consulProperties.getScheme() + CommonConstant.SEPARATOR_COLON + StringUtils.repeat(CommonConstant.SEPARATOR_VIRGULE, 2) + consulProperties
+            .getHost();
+
+    ConsulClient consulClient;
 
     if (consulProperties.getTls() != null) {
       ConsulProperties.TLSConfig tls = consulProperties.getTls();
       TLSConfig tlsConfig = new TLSConfig(tls.getKeyStoreInstanceType(),
           tls.getCertificatePath(), tls.getCertificatePassword(),
           tls.getKeyStorePath(), tls.getKeyStorePassword());
-      return new ConsulClient(agentHost, agentPort, tlsConfig);
+      log.info("agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig);
+      consulClient = new ConsulClient(agentHost, agentPort, tlsConfig);
+    } else {
+      log.info("agentHost: " + agentHost + "      agentPort: " + agentPort);
+      consulClient = new ConsulClient(agentHost, agentPort);
     }
-    return new ConsulClient(agentHost, agentPort);
+    return consulClient;
   }
 }

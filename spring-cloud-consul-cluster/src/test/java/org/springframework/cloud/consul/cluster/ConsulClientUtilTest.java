@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 /**
  * ConsulClient工具类 单元测试
  */
-
 @Slf4j
 public class ConsulClientUtilTest {
 

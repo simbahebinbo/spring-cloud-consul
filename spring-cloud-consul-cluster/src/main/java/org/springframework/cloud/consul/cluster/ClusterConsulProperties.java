@@ -9,15 +9,13 @@ import java.util.concurrent.TimeoutException;
 
 import javax.validation.constraints.NotNull;
 
+import com.ecwid.consul.transport.TransportException;
+import com.ecwid.consul.v1.OperationException;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.consul.ConsulProperties;
 import org.springframework.validation.annotation.Validated;
-
-import com.ecwid.consul.transport.TransportException;
-import com.ecwid.consul.v1.OperationException;
 
 /**
  * 集群ConsulClient配置
@@ -27,15 +25,12 @@ import com.ecwid.consul.v1.OperationException;
 public class ClusterConsulProperties extends ConsulProperties {
 
   @Setter
+  @Getter
   private NodeModeEnum nodeMode;
 
-  /**
-   * Consul的ACL访问控制token
-   */
-  @Getter
   @Setter
-  @Value("${consul.token:${CONSUL_TOKEN:${spring.cloud.consul.token:${SPRING_CLOUD_CONSUL_TOKEN:}}}}")
-  private String aclToken;
+  @Getter
+  private List<String> clusterNodes;
 
   /**
    * 集群ConsulClient客户端一致性哈希算法的Key 建议与spring.cloud.client.ip-address对应的值一致
@@ -79,10 +74,10 @@ public class ClusterConsulProperties extends ConsulProperties {
 
   @Override
   public String toString() {
-    return "ClusterConsulProperties{" + "host='" + getHost() + '\'' + ", port="
-        + getPort() + ", scheme=" + getScheme() + ", tls=" + getTls()
-        + ", enabled=" + isEnabled() + ", onlyClients=" + isOnlyClients()
-        + ", aclToken=" + getAclToken() + ", clusterClientKey="
+    return "ClusterConsulProperties{" + "clusterNodes='" + getClusterNodes() + '\''
+        + ", scheme=" + getScheme() + ", tls=" + getTls()
+        + ", enabled=" + isEnabled() + ", nodeMode=" + getNodeMode()
+        + ", clusterClientKey="
         + getClusterClientKey() + ", healthCheckInterval="
         + getHealthCheckInterval() + ", retryableExceptions="
         + getRetryableExceptions() + '}';

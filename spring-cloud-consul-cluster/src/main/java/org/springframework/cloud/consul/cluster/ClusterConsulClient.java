@@ -3,7 +3,6 @@ package org.springframework.cloud.consul.cluster;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.Lists;
 
 import com.ecwid.consul.ConsulException;
@@ -36,9 +34,6 @@ import com.ecwid.consul.v1.agent.model.NewService;
 import com.ecwid.consul.v1.agent.model.Self;
 import com.ecwid.consul.v1.agent.model.Service;
 import com.ecwid.consul.v1.catalog.CatalogClient;
-import com.ecwid.consul.v1.catalog.CatalogNodesRequest;
-import com.ecwid.consul.v1.catalog.CatalogServiceRequest;
-import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import com.ecwid.consul.v1.catalog.model.CatalogDeregistration;
 import com.ecwid.consul.v1.catalog.model.CatalogNode;
 import com.ecwid.consul.v1.catalog.model.CatalogRegistration;
@@ -47,12 +42,9 @@ import com.ecwid.consul.v1.coordinate.CoordinateClient;
 import com.ecwid.consul.v1.coordinate.model.Datacenter;
 import com.ecwid.consul.v1.coordinate.model.Node;
 import com.ecwid.consul.v1.event.EventClient;
-import com.ecwid.consul.v1.event.EventListRequest;
 import com.ecwid.consul.v1.event.model.Event;
 import com.ecwid.consul.v1.event.model.EventParams;
-import com.ecwid.consul.v1.health.HealthChecksForServiceRequest;
 import com.ecwid.consul.v1.health.HealthClient;
-import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.Check;
 import com.ecwid.consul.v1.health.model.Check.CheckStatus;
 import com.ecwid.consul.v1.health.model.HealthService;
@@ -69,6 +61,7 @@ import com.ecwid.consul.v1.status.StatusClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.consul.ConsulProperties;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
@@ -76,7 +69,6 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * 集群版ConsulClient
@@ -88,8 +80,9 @@ import org.springframework.util.StringUtils;
  * 1、默认组成客户端集群的节点必须是client模式的节点，并且在服务启动注册前都要求是可用的(健康的)
  *
  * 2、服务配置模块：关于ConsulClient KV操作仅在当前节点上执行一次，
+ *
  * 如果当前节点不可用则使用RetryTemplate进行fallback重试!
- * 
+ *
  * 3、服务注册模块：
  *
  * 3.1、ConsulServiceRegistry 中所用到的几个方法(agentServiceRegister,agentServiceDeregister,agentServiceSetMaintenance)，
@@ -113,12 +106,16 @@ import org.springframework.util.StringUtils;
  * 4、服务发现模块：
  *
  * 4.1、服务发现模块所用到的几个方法(getCatalogServices，getHealthServices)，
+ *
  * 仅在当前节点上执行一次，如果当前节点不可用则使用RetryTemplate进行fallback重试!
  *
  * 4.2、由3.1可知，服务发现模块所用到的获取服务实例列表方法(getHealthServices)，
+ *
  * 它的调用结果存在重复，因此调用处(ConsulServiceRegistry.getInstances()、ConsulServerList.getXxxServers())需要加入排重逻辑!
  *
- * 5、其他SpringCloud中未使用到的方法，使用默认策略，即仅在当前节点上执行一次，如果当前节点不可用则使用RetryTemplate进行fallback重试!
+ * 5、其他SpringCloud中未使用到的方法，使用默认策略，即仅在当前节点上执行一次，
+ *
+ * 如果当前节点不可用则使用RetryTemplate进行fallback重试!
  */
 
 @Slf4j
@@ -139,7 +136,7 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
    * ConsulClient配置
    */
   @Getter
-  private final ClusterConsulProperties consulProperties;
+  private final ClusterConsulProperties clusterConsulProperties;
 
   /**
    * 所有ConsulClient
@@ -170,11 +167,11 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
    */
   private final Lock chooseLock = new ReentrantLock();
 
-  public ClusterConsulClient(ClusterConsulProperties consulProperties) {
+  public ClusterConsulClient(ClusterConsulProperties clusterConsulProperties) {
     super();
-    Assert.notNull(consulProperties,
+    Assert.notNull(clusterConsulProperties,
         "Parameter 'consulProperties' must be required!");
-    this.consulProperties = consulProperties;
+    this.clusterConsulProperties = clusterConsulProperties;
     // 创建所有集群节点
     this.consulClients = createConsulClients();
     // 创建重试模板
@@ -183,16 +180,16 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
     ConsulClientHolder tmpPrimaryClient = initPrimaryClient();
 
     // 如果存在不可用节点则立即快速失败
-    Assert.state(consulClients.stream().allMatch(ConsulClientHolder::isHealthy),
+    Assert.state(this.consulClients.stream().allMatch(ConsulClientHolder::isHealthy),
         "Creating ClusterConsulClient failed：all consul nodes of cluster must be available!");
 
     List<String> modeList = getAllConsulAgentMode();
     // 集群中的节点只能是client模式的节点?
-    if (consulProperties.isOnlyClients()) {
+    if (clusterConsulProperties.isOnlyClients()) {
       boolean isAllClientNode = modeList.stream().allMatch(CLIENT::equals);
       Assert.state(isAllClientNode,
           "Creating ClusterConsulClient failed：all consul nodes of cluster must be in 'client' mode!");
-    } else if (consulProperties.isOnlyServers()) {
+    } else if (clusterConsulProperties.isOnlyServers()) {
       boolean isAllServerNode = modeList.stream().allMatch(SERVER::equals);
       Assert.state(isAllServerNode,
           "Creating ClusterConsulClient failed：all consul nodes of cluster must be in 'server' mode!");
@@ -206,13 +203,7 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
   private List<String> getAllConsulAgentMode() {
     List<String> modeList = Lists.newArrayList();
     consulClients.forEach(client -> {
-      Response<Self> response;
-      if (!StringUtils.isEmpty(consulProperties.getAclToken())) {
-        response = client.getClient()
-            .getAgentSelf(consulProperties.getAclToken());
-      } else {
-        response = client.getClient().getAgentSelf();
-      }
+      Response<Self> response = client.getClient().getAgentSelf();
       if (response.getValue().getConfig().isServer()) {
         modeList.add(SERVER);
       } else {
@@ -630,18 +621,42 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
 
   @Override
   public Response<List<Check>> getHealthChecksForService(String serviceName,
-      HealthChecksForServiceRequest healthChecksForServiceRequest) {
+      QueryParams queryParams) {
     return retryTemplate
         .execute((RetryCallback<Response<List<Check>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getHealthChecksForService(serviceName, healthChecksForServiceRequest));
+            .getHealthChecksForService(serviceName, queryParams));
   }
 
   @Override
   public Response<List<HealthService>> getHealthServices(String serviceName,
-      HealthServicesRequest healthServicesRequest) {
+      boolean onlyPassing, QueryParams queryParams) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getHealthServices(serviceName, healthServicesRequest));
+            .getHealthServices(serviceName, onlyPassing, queryParams));
+  }
+
+  @Override
+  public Response<List<HealthService>> getHealthServices(String serviceName, String tag,
+      boolean onlyPassing, QueryParams queryParams) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
+            serviceName, tag, onlyPassing, queryParams));
+  }
+
+  @Override
+  public Response<List<HealthService>> getHealthServices(String serviceName,
+      boolean onlyPassing, QueryParams queryParams, String token) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
+            serviceName, onlyPassing, queryParams, token));
+  }
+
+  @Override
+  public Response<List<HealthService>> getHealthServices(String serviceName, String tag,
+      boolean onlyPassing, QueryParams queryParams, String token) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<HealthService>>, ConsulException>) context -> getRetryConsulClient(context).getHealthServices(
+            serviceName, tag, onlyPassing, queryParams, token));
   }
 
   @Override
@@ -668,9 +683,16 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
   }
 
   @Override
-  public Response<List<Event>> eventList(EventListRequest eventListRequest) {
+  public Response<List<Event>> eventList(QueryParams queryParams) {
     return retryTemplate
-        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(eventListRequest));
+        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(queryParams));
+  }
+
+  @Override
+  public Response<List<Event>> eventList(String event, QueryParams queryParams) {
+    return retryTemplate
+        .execute((RetryCallback<Response<List<Event>>, ConsulException>) context -> getRetryConsulClient(context).eventList(event,
+            queryParams));
   }
 
   @Override
@@ -715,26 +737,58 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
 
   @Override
   public Response<List<com.ecwid.consul.v1.catalog.model.Node>> getCatalogNodes(
-      CatalogNodesRequest catalogNodesRequest) {
+      QueryParams queryParams) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<com.ecwid.consul.v1.catalog.model.Node>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogNodes(catalogNodesRequest));
+            .getCatalogNodes(queryParams));
   }
 
   @Override
   public Response<Map<String, List<String>>> getCatalogServices(
-      CatalogServicesRequest catalogServicesRequest) {
+      QueryParams queryParams) {
     return retryTemplate.execute(
         (RetryCallback<Response<Map<String, List<String>>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogServices(catalogServicesRequest));
+            .getCatalogServices(queryParams));
+  }
+
+  @Override
+  public Response<Map<String, List<String>>> getCatalogServices(QueryParams queryParams,
+      String token) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<Map<String, List<String>>>, ConsulException>) context -> getRetryConsulClient(context)
+            .getCatalogServices(queryParams, token));
   }
 
   @Override
   public Response<List<CatalogService>> getCatalogService(String serviceName,
-      CatalogServiceRequest catalogServiceRequest) {
+      QueryParams queryParams) {
     return retryTemplate.execute(
         (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
-            .getCatalogService(serviceName, catalogServiceRequest));
+            .getCatalogService(serviceName, queryParams));
+  }
+
+  @Override
+  public Response<List<CatalogService>> getCatalogService(String serviceName,
+      String tag, QueryParams queryParams) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
+            .getCatalogService(serviceName, tag, queryParams));
+  }
+
+  @Override
+  public Response<List<CatalogService>> getCatalogService(String serviceName,
+      QueryParams queryParams, String token) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
+            .getCatalogService(serviceName, queryParams, token));
+  }
+
+  @Override
+  public Response<List<CatalogService>> getCatalogService(String serviceName,
+      String tag, QueryParams queryParams, String token) {
+    return retryTemplate.execute(
+        (RetryCallback<Response<List<CatalogService>>, ConsulException>) context -> getRetryConsulClient(context)
+            .getCatalogService(serviceName, tag, queryParams, token));
   }
 
   @Override
@@ -1083,14 +1137,10 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
     List<String> connectList = prepareConnectList();
     List<ConsulClientHolder> tmpConsulClients = connectList.stream().map(connect -> {
       String[] connects = connect.split(CommonConstant.SEPARATOR_COLON);
-      ClusterConsulProperties properties = new ClusterConsulProperties();
-      properties.setEnabled(consulProperties.isEnabled());
-      properties.setScheme(consulProperties.getScheme());
-      properties.setTls(consulProperties.getTls());
-      properties.setAclToken(consulProperties.getAclToken());
-      properties.setClusterClientKey(consulProperties.getClusterClientKey());
-      properties.setHealthCheckInterval(consulProperties.getHealthCheckInterval());
-      properties.setRetryableExceptions(consulProperties.getRetryableExceptions());
+      ConsulProperties properties = new ConsulProperties();
+      properties.setEnabled(clusterConsulProperties.isEnabled());
+      properties.setScheme(clusterConsulProperties.getScheme());
+      properties.setTls(clusterConsulProperties.getTls());
       properties.setHost(connects[0]);
       properties.setPort(Integer.parseInt(connects[1]));
       return new ConsulClientHolder(properties);
@@ -1105,18 +1155,8 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
    * 准备ConsulClient的连接标识
    */
   protected List<String> prepareConnectList() {
-    List<String> connectList = new ArrayList<>();
-    String hosts = consulProperties.getHost();
-    String[] connects = CharMatcher.anyOf(CommonConstant.SEPARATOR_COMMA).trimFrom(hosts.trim()).split(CommonConstant.SEPARATOR_COMMA);
-    for (String connect : connects) {
-      String[] parts = CharMatcher.anyOf(CommonConstant.SEPARATOR_COLON).trimFrom(connect.trim()).split(CommonConstant.SEPARATOR_COLON);
-      Assert.isTrue(parts.length == 2, String
-          .format("Invalid config 'spring.cloud.consul.cluster.nodes' : %s", hosts));
-      String host = parts[0];
-      int port = Integer.parseInt(parts[1]);
-
-      connectList.add(host + CommonConstant.SEPARATOR_COLON + port);
-    }
+    List<String> connectList = clusterConsulProperties.getClusterNodes();
+    log.info("Connect list: " + connectList);
     return connectList;
   }
 
@@ -1126,8 +1166,8 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
   protected RetryTemplate createRetryTemplate() {
     Map<Class<? extends Throwable>, Boolean> retryableExceptions = null;
 
-    if (!CollectionUtils.isEmpty(consulProperties.getRetryableExceptions())) {
-      retryableExceptions = consulProperties.getRetryableExceptions().stream()
+    if (!CollectionUtils.isEmpty(clusterConsulProperties.getRetryableExceptions())) {
+      retryableExceptions = clusterConsulProperties.getRetryableExceptions().stream()
           .collect(Collectors.toMap(Function.identity(), e -> Boolean.TRUE,
               (oldValue, newValue) -> newValue));
     }
@@ -1161,7 +1201,7 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
    * 根据已生成的集群列表(不管节点健康状况)初始化主要ConsulClient
    */
   protected ConsulClientHolder initPrimaryClient() {
-    return ConsulClientUtil.chooseClient(consulProperties.getClusterClientKey(),
+    return ConsulClientUtil.chooseClient(clusterConsulProperties.getClusterClientKey(),
         consulClients);
   }
 
@@ -1178,7 +1218,7 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
             .collect(Collectors.toList());
         // 在健康节点中通过哈希一致性算法选取一个节点
         ConsulClientHolder choosedClient = ConsulClientUtil.chooseClient(
-            consulProperties.getClusterClientKey(), availableClients);
+            clusterConsulProperties.getClusterClientKey(), availableClients);
 
         if (choosedClient == null) {
           checkConsulClientsHealth(); // 一个健康节点都没有，则立马执行一次全部健康检测
@@ -1241,8 +1281,8 @@ public class ClusterConsulClient extends ConsulClient implements AclClient, Agen
    */
   protected void scheduleConsulClientsHealthCheck() {
     consulClientsHealthCheckExecutor.scheduleAtFixedRate(
-        this::checkConsulClientsHealth, consulProperties.getHealthCheckInterval(),
-        consulProperties.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
+        this::checkConsulClientsHealth, clusterConsulProperties.getHealthCheckInterval(),
+        clusterConsulProperties.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**

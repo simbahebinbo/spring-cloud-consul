@@ -6,11 +6,10 @@ import java.util.Map;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
-import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.cloud.consul.ConsulProperties;
 
 /*
  * ConsulClient holder
@@ -22,7 +21,7 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
    * 当前ConsulClient的配置
    */
   @Getter
-  private final ClusterConsulProperties properties;
+  private final ConsulProperties properties;
 
   /**
    * Consul客户端
@@ -44,7 +43,7 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
   @Setter
   private boolean isPrimary = false;
 
-  public ConsulClientHolder(ClusterConsulProperties properties) {
+  public ConsulClientHolder(ConsulProperties properties) {
     super();
     this.properties = properties;
     this.client = ConsulClientUtil.createConsulClient(properties);
@@ -60,23 +59,10 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
    * 检测当前ConsulClient的健康状况
    */
   public void checkHealth() {
-    String aclToken = properties.getAclToken();
 
     boolean tmpHealthy = false;
     try {
-      Response<Map<String, List<String>>> response;
-      if (!StringUtils.isEmpty(aclToken)) {
-        CatalogServicesRequest catalogServicesRequest = CatalogServicesRequest.newBuilder()
-            .setQueryParams(QueryParams.DEFAULT)
-            .setToken(aclToken)
-            .build();
-        response = client.getCatalogServices(catalogServicesRequest);
-      } else {
-        CatalogServicesRequest catalogServicesRequest = CatalogServicesRequest.newBuilder()
-            .setQueryParams(QueryParams.DEFAULT)
-            .build();
-        response = client.getCatalogServices(catalogServicesRequest);
-      }
+      Response<Map<String, List<String>>> response = client.getCatalogServices(QueryParams.DEFAULT);
       tmpHealthy = !response.getValue().isEmpty();
     } catch (Exception e) {
       log.error("Check consul client health failed : {}",

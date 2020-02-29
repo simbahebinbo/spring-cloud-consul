@@ -39,27 +39,23 @@ public class ClusterConsulBootstrapConfiguration {
   @Bean
   @ConditionalOnMissingBean
   public ConsulProperties consulProperties() {
-    ClusterConsulProperties consulProperties = new ClusterConsulProperties();
+    ClusterConsulProperties clusterConsulProperties = new ClusterConsulProperties();
     HostInfo hostInfo = inetUtils.findFirstNonLoopbackHostInfo();
-    consulProperties.setClusterClientKey(hostInfo.getIpAddress());
-    consulProperties.setHost(clusterConsulConfiguration.getNodes());
-    consulProperties.setNodeMode(clusterConsulConfiguration.getNodeMode());
-    return consulProperties;
+    clusterConsulProperties.setClusterClientKey(hostInfo.getIpAddress());
+    clusterConsulProperties.setClusterNodes(clusterConsulConfiguration.getClusterNodes());
+    clusterConsulProperties.setNodeMode(clusterConsulConfiguration.getNodeMode());
+    return clusterConsulProperties;
   }
 
   @Bean
   @ConditionalOnMissingBean
   public ConsulClient consulClient(ConsulProperties consulProperties) {
-    ConsulClient consulClient = createClusterConsulClient(
-        (ClusterConsulProperties) consulProperties);
+    ClusterConsulClient clusterConsulClient = new ClusterConsulClient((ClusterConsulProperties) consulProperties);
 
     log.info("Default ConsulClient created : {}, with config properties : {}",
-        consulClient, consulProperties);
-    return consulClient;
-  }
-
-  protected ConsulClient createClusterConsulClient(
-      ClusterConsulProperties consulProperties) {
-    return new ClusterConsulClient(consulProperties);
+        clusterConsulClient, consulProperties);
+    return clusterConsulClient;
   }
 }
+
+

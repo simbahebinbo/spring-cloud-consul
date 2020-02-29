@@ -57,12 +57,21 @@ public class ClusterConsulConfiguration {
       throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
     }
 
+    clusterNodes.forEach(clusterNode -> {
+      List<String> parts = Arrays.stream(clusterNode.split(CommonConstant.SEPARATOR_COLON)).filter(StringUtils::isNotEmpty)
+          .collect(Collectors.toList());
+      if (CollectionUtils.isEmpty(parts)) {
+        log.error("spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080");
+        throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
+      }
+    });
+
     if (StringUtils.isEmpty(mode)) {
       mode = NodeModeEnum.ALL.getValue();
     } else {
       if (NodeModeEnum.findByValue(mode) == null) {
-        log.error("spring.cloud.consul.cluster.mode config error. For example: client or server or all");
-        throw new BadConfigException("spring.cloud.consul.cluster.mode config error.");
+        log.error("spring.cloud.consul.cluster.modes config error. For example: client or server or all");
+        throw new BadConfigException("spring.cloud.consul.cluster.modes config error.");
       }
     }
   }
