@@ -100,8 +100,8 @@ consul的使用守则是应用程序与consul client共生死(部署在一起,�
 在此将去重逻辑放在了自定义的ConsulDiscoveryClient和ConsulServerList中了
 
 # 版本
-分支 dev-2.1.2.RELEASE 基于spring-cloud-consul 2.1.2.RELEASE版本
-分支 dev-2.2.1.RELEASE 基于spring-cloud-consul 2.2.1.RELEASE版本
+* 分支 dev-2.1.2.RELEASE 基于spring-cloud-consul 2.1.2.RELEASE版本
+* 分支 dev-2.2.1.RELEASE 基于spring-cloud-consul 2.2.1.RELEASE版本
 
 # 使用方法
 
