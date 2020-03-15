@@ -31,14 +31,16 @@ public class CustomConsulServerList extends ConsulServerList {
   @Override
   public List<ConsulServer> getInitialListOfServers() {
     List<ConsulServer> servers = super.getInitialListOfServers();
-    log.info("Get initial servers : {}", servers);
+    log.info("spring cloud consul cluster: >>> Get initial servers : {} <<<", servers);
+
     return servers;
   }
 
   @Override
   public List<ConsulServer> getUpdatedListOfServers() {
     List<ConsulServer> servers = super.getUpdatedListOfServers();
-    log.info("Get update servers : {}", servers);
+    log.info("spring cloud consul cluster: >>> Get update servers : {} <<<", servers);
+
     return servers;
   }
 
@@ -55,6 +57,7 @@ public class CustomConsulServerList extends ConsulServerList {
       }
       servers.putIfAbsent(instanceId, server); // 去重
     }
+
     return new ArrayList<>(servers.values());
   }
 

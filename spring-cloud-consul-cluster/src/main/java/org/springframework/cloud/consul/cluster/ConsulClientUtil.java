@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.consul.ConsulProperties;
-import org.springframework.util.Assert;
 
 /**
  * ConsulClient工具类
@@ -34,7 +33,6 @@ public class ConsulClientUtil {
    * @param clients - 在每次调用之前请确保clients的顺序是一致的
    */
   public static <T> T chooseClient(String key, List<T> clients) {
-    Assert.hasText(key, "Parameter 'key' must be required!");
     int prime = 31; // always used in hashcode method
     return chooseClient(Hashing.murmur3_128(prime).hashString(key, DEFAULT_CHARSET),
         clients);
@@ -47,7 +45,6 @@ public class ConsulClientUtil {
    * @param clients - 在每次调用之前请确保clients的顺序是一致的
    */
   public static <T> T chooseClient(HashCode keyHash, List<T> clients) {
-    Assert.notNull(keyHash, "Parameter 'keyHash' must be required!");
     if (!CollectionUtils.isEmpty(clients)) {
       final List<T> nodeList = new ArrayList<>(clients);
       int hitIndex = Hashing.consistentHash(keyHash, nodeList.size());
@@ -66,19 +63,32 @@ public class ConsulClientUtil {
         : consulProperties.getScheme() + CommonConstant.SEPARATOR_COLON + StringUtils.repeat(CommonConstant.SEPARATOR_VIRGULE, 2) + consulProperties
             .getHost();
 
-    ConsulClient consulClient;
+    ConsulClient consulClient = null;
 
     if (consulProperties.getTls() != null) {
       ConsulProperties.TLSConfig tls = consulProperties.getTls();
       TLSConfig tlsConfig = new TLSConfig(tls.getKeyStoreInstanceType(),
           tls.getCertificatePath(), tls.getCertificatePassword(),
           tls.getKeyStorePath(), tls.getKeyStorePassword());
-      log.info("agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig);
-      consulClient = new ConsulClient(agentHost, agentPort, tlsConfig);
+      try {
+        consulClient = new ConsulClient(agentHost, agentPort, tlsConfig);
+        log.debug(
+            "spring cloud consul cluster: >>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
+                + " <<<");
+      } catch (Exception e) {
+        log.warn(
+            "spring cloud consul cluster: >>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
+                + "  {}  <<<", e.getMessage());
+      }
     } else {
-      log.info("agentHost: " + agentHost + "      agentPort: " + agentPort);
-      consulClient = new ConsulClient(agentHost, agentPort);
+      try {
+        consulClient = new ConsulClient(agentHost, agentPort);
+        log.debug("spring cloud consul cluster: >>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + " <<<");
+      } catch (Exception e) {
+        log.warn("spring cloud consul cluster: >>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "  {}  <<<", e.getMessage());
+      }
     }
+
     return consulClient;
   }
 }

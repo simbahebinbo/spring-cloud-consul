@@ -23,11 +23,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("spring.cloud.consul")
 @Validated
 public class ClusterConsulProperties extends ConsulProperties {
-
-  @Setter
-  @Getter
-  private NodeModeEnum nodeMode;
-
   @Setter
   @Getter
   private List<String> clusterNodes;
@@ -56,27 +51,11 @@ public class ClusterConsulProperties extends ConsulProperties {
       TransportException.class, OperationException.class, IOException.class,
       ConnectException.class, TimeoutException.class, SocketTimeoutException.class);
 
-  /**
-   * 初始化时是否要求所有节点都必须是client节点
-   */
-  public boolean isOnlyClients() {
-    boolean onlyClients = NodeModeEnum.CLIENT.equals(nodeMode);
-    return onlyClients;
-  }
-
-  /**
-   * 初始化时是否要求所有节点都必须是server节点
-   */
-  public boolean isOnlyServers() {
-    boolean onlyServers = NodeModeEnum.SERVER.equals(nodeMode);
-    return onlyServers;
-  }
-
   @Override
   public String toString() {
     return "ClusterConsulProperties{" + "clusterNodes='" + getClusterNodes() + '\''
         + ", scheme=" + getScheme() + ", tls=" + getTls()
-        + ", enabled=" + isEnabled() + ", nodeMode=" + getNodeMode()
+        + ", enabled=" + isEnabled()
         + ", clusterClientKey="
         + getClusterClientKey() + ", healthCheckInterval="
         + getHealthCheckInterval() + ", retryableExceptions="

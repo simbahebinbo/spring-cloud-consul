@@ -32,51 +32,31 @@ public class ClusterConsulConfiguration {
   @Getter
   private String nodes;
 
-  /**
-   * 初始化时要求所有节点的类型
-   */
-  @Setter
-  @Getter
-  private String mode;
-
   @Getter
   private List<String> clusterNodes;
 
   @PostConstruct
   public void init() {
-    if (StringUtils.isEmpty(nodes)) {
-      log.error("spring.cloud.consul.cluster.nodes cannot be null");
+    if (StringUtils.isEmpty(this.nodes)) {
+      log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes cannot be null <<<");
       throw new BadConfigException("spring.cloud.consul.cluster.nodes cannot be null");
     }
 
-    clusterNodes = Arrays.stream(nodes.split(CommonConstant.SEPARATOR_COMMA)).filter(StringUtils::isNotEmpty)
+    this.clusterNodes = Arrays.stream(this.nodes.split(CommonConstant.SEPARATOR_COMMA)).filter(StringUtils::isNotEmpty)
         .collect(Collectors.toList());
 
-    if (CollectionUtils.isEmpty(clusterNodes)) {
-      log.error("spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080");
+    if (CollectionUtils.isEmpty(this.clusterNodes)) {
+      log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
       throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
     }
 
-    clusterNodes.forEach(clusterNode -> {
+    this.clusterNodes.forEach(clusterNode -> {
       List<String> parts = Arrays.stream(clusterNode.split(CommonConstant.SEPARATOR_COLON)).filter(StringUtils::isNotEmpty)
           .collect(Collectors.toList());
       if (CollectionUtils.isEmpty(parts)) {
-        log.error("spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080");
+        log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
         throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
       }
     });
-
-    if (StringUtils.isEmpty(mode)) {
-      mode = NodeModeEnum.ALL.getValue();
-    } else {
-      if (NodeModeEnum.findByValue(mode) == null) {
-        log.error("spring.cloud.consul.cluster.modes config error. For example: client or server or all");
-        throw new BadConfigException("spring.cloud.consul.cluster.modes config error.");
-      }
-    }
-  }
-
-  public NodeModeEnum getNodeMode() {
-    return NodeModeEnum.findByValue(mode);
   }
 }

@@ -30,15 +30,16 @@ public class CustomConsulDiscoveryClient extends ConsulDiscoveryClient {
   @Override
   public List<ServiceInstance> getInstances(String serviceId) {
     List<ServiceInstance> instances = super.getInstances(serviceId);
-    log.info("Before distinct:  Get instances of service({}) from consul : {}", serviceId,
+    log.info("spring cloud consul cluster: >>> Before distinct:  Get instances of service({}) from consul : {} <<<", serviceId,
         instances);
     Map<String, ServiceInstance> filteredInstances = new HashMap<>();
     for (ServiceInstance instance : instances) { // 去重
       filteredInstances.putIfAbsent(instance.getInstanceId(), instance);
     }
     instances = new ArrayList<>(filteredInstances.values());
-    log.info("After distinct:  Get instances of service({}) from consul : {}", serviceId,
+    log.info("spring cloud consul cluster: >>> After distinct:  Get instances of service({}) from consul : {} <<<", serviceId,
         instances);
+
     return instances;
   }
 }

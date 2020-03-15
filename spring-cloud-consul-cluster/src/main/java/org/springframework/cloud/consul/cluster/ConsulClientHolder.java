@@ -9,6 +9,7 @@ import com.ecwid.consul.v1.Response;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.cloud.consul.ConsulProperties;
 
 /*
@@ -36,19 +37,16 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
   @Setter
   private boolean healthy = true;
 
-  /**
-   * 是否为主客户端
-   */
-  @Getter
-  @Setter
-  private boolean isPrimary = false;
-
   public ConsulClientHolder(ConsulProperties properties) {
     super();
     this.properties = properties;
     this.client = ConsulClientUtil.createConsulClient(properties);
-    log.info("Cluster ConsulClient[{}] created!", this.getClientId());
-    this.checkHealth(); // 创建时做一次健康检测
+    if (ObjectUtils.isNotEmpty(this.client)) {
+      log.debug("spring cloud consul cluster: >>> Cluster ConsulClient[{}] created! <<<", this.getClientId());
+      this.checkHealth(); // 创建时做一次健康检测
+    } else {
+      log.warn("spring cloud consul cluster: >>> Cluster ConsulClient[{}] cannot create! <<<", this.getClientId());
+    }
   }
 
   public String getClientId() {
@@ -61,15 +59,17 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
   public void checkHealth() {
 
     boolean tmpHealthy = false;
-    try {
-      Response<Map<String, List<String>>> response = client.getCatalogServices(QueryParams.DEFAULT);
-      tmpHealthy = !response.getValue().isEmpty();
-    } catch (Exception e) {
-      log.error("Check consul client health failed : {}",
-          e.getMessage());
+    if (ObjectUtils.isNotEmpty(this.client)) {
+      try {
+        Response<Map<String, List<String>>> response = this.client.getCatalogServices(QueryParams.DEFAULT);
+        tmpHealthy = !response.getValue().isEmpty();
+      } catch (Exception e) {
+        log.error("spring cloud consul cluster: >>> Check consul client health failed : {} <<<",
+            e.getMessage());
+      }
     }
     this.setHealthy(tmpHealthy);
-    log.info("Cluster consul client healthcheck finished: {}", this);
+    log.info("spring cloud consul cluster: >>> Cluster consul client health check finished: {} <<<", this);
   }
 
   /**
@@ -82,8 +82,7 @@ public class ConsulClientHolder implements Comparable<ConsulClientHolder> {
 
   @Override
   public String toString() {
-    return "{ clientId = " + getClientId() + ", healthy = " + healthy
-        + ", isPrimary = " + isPrimary + " }";
+    return "{ clientId = " + getClientId() + ", healthy = " + healthy + " }";
   }
 }
 
