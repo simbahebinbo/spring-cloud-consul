@@ -38,7 +38,7 @@ public class ClusterConsulConfiguration {
   @PostConstruct
   public void init() {
     if (StringUtils.isEmpty(this.nodes)) {
-      log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes cannot be null <<<");
+      log.error(CommonConstant.LOG_PREFIX + ">>> spring.cloud.consul.cluster.nodes cannot be null <<<");
       throw new BadConfigException("spring.cloud.consul.cluster.nodes cannot be null");
     }
 
@@ -46,7 +46,7 @@ public class ClusterConsulConfiguration {
         .collect(Collectors.toList());
 
     if (CollectionUtils.isEmpty(this.clusterNodes)) {
-      log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
+      log.error(CommonConstant.LOG_PREFIX + ">>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
       throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
     }
 
@@ -54,7 +54,7 @@ public class ClusterConsulConfiguration {
       List<String> parts = Arrays.stream(clusterNode.split(CommonConstant.SEPARATOR_COLON)).filter(StringUtils::isNotEmpty)
           .collect(Collectors.toList());
       if (CollectionUtils.isEmpty(parts)) {
-        log.error("spring cloud consul cluster: >>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
+        log.error(CommonConstant.LOG_PREFIX + ">>> spring.cloud.consul.cluster.nodes config error. For example: example.com:8500,192.168.1.1:8080 <<<");
         throw new BadConfigException("spring.cloud.consul.cluster.nodes config error.");
       }
     });

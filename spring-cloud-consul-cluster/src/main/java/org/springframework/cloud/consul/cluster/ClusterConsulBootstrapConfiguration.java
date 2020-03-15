@@ -52,7 +52,7 @@ public class ClusterConsulBootstrapConfiguration {
   public ConsulClient consulClient(ConsulProperties consulProperties) {
     ClusterConsulClient clusterConsulClient = new ClusterConsulClient((ClusterConsulProperties) consulProperties);
 
-    log.info("spring cloud consul cluster: >>> Default ConsulClient created : {}, with config properties : {} <<<",
+    log.info(CommonConstant.LOG_PREFIX + ">>> Default ConsulClient created : {}, with config properties : {} <<<",
         clusterConsulClient, consulProperties);
     return clusterConsulClient;
   }

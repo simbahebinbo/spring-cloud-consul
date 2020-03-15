@@ -73,19 +73,19 @@ public class ConsulClientUtil {
       try {
         consulClient = new ConsulClient(agentHost, agentPort, tlsConfig);
         log.debug(
-            "spring cloud consul cluster: >>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
+            CommonConstant.LOG_PREFIX + ">>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
                 + " <<<");
       } catch (Exception e) {
         log.warn(
-            "spring cloud consul cluster: >>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
+            CommonConstant.LOG_PREFIX + ">>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "     tlsConfig: " + tlsConfig
                 + "  {}  <<<", e.getMessage());
       }
     } else {
       try {
         consulClient = new ConsulClient(agentHost, agentPort);
-        log.debug("spring cloud consul cluster: >>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + " <<<");
+        log.debug(CommonConstant.LOG_PREFIX + ">>> createConsulClient Success. agentHost: " + agentHost + "      agentPort: " + agentPort + " <<<");
       } catch (Exception e) {
-        log.warn("spring cloud consul cluster: >>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "  {}  <<<", e.getMessage());
+        log.warn(CommonConstant.LOG_PREFIX + ">>> createConsulClient Fail. agentHost: " + agentHost + "      agentPort: " + agentPort + "  {}  <<<", e.getMessage());
       }
     }
 

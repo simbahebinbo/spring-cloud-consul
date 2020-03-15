@@ -31,7 +31,7 @@ public class CustomConsulRibbonClientConfiguration {
     ConsulServerList serverList = new CustomConsulServerList(consulClient,
         properties);
     serverList.initWithNiwsConfig(config);
-    log.info("spring cloud consul cluster: >>> consul server list: " + serverList + " <<<");
+    log.info(CommonConstant.LOG_PREFIX + ">>> consul server list: " + serverList + " <<<");
 
     return serverList;
   }

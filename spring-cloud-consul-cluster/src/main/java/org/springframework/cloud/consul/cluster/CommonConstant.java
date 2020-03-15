@@ -53,4 +53,7 @@ public class CommonConstant {
    * 连字符 中横线
    */
   public static final String SEPARATOR_HYPHEN = "-";
+
+  //日志前缀
+  public static final String LOG_PREFIX = "spring cloud consul cluster:   ";
 }
