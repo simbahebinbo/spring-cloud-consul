@@ -40,7 +40,7 @@ public class ClusterConsulProperties extends ConsulProperties {
    */
   @Getter
   @Setter
-  private long healthCheckInterval = 10000;
+  private long healthCheckInterval;
 
   /**
    * 重试其他集群节点的前提条件(异常)

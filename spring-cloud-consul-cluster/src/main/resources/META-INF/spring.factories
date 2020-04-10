@@ -4,5 +4,6 @@ org.springframework.cloud.consul.cluster.CustomConsulDiscoveryClientConfiguratio
 # Bootstrap Configuration
 org.springframework.cloud.bootstrap.BootstrapConfiguration=\
 org.springframework.cloud.consul.cluster.ClusterConsulConfiguration, \
+org.springframework.cloud.consul.cluster.ConsulRetryConfiguration, \
 org.springframework.cloud.consul.cluster.ClusterConsulBootstrapConfiguration,\
 org.springframework.cloud.consul.cluster.CustomConsulDiscoveryClientBootstrapConfiguration

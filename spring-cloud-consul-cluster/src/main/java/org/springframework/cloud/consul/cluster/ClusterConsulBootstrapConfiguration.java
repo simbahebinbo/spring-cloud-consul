@@ -36,11 +36,15 @@ public class ClusterConsulBootstrapConfiguration {
   @Autowired
   private ClusterConsulConfiguration clusterConsulConfiguration;
 
+  @Autowired
+  private ConsulRetryConfiguration consulRetryConfiguration;
+
   @Bean
   @ConditionalOnMissingBean
   public ConsulProperties consulProperties() {
     ClusterConsulProperties clusterConsulProperties = new ClusterConsulProperties();
     HostInfo hostInfo = inetUtils.findFirstNonLoopbackHostInfo();
+    clusterConsulProperties.setHealthCheckInterval(consulRetryConfiguration.getInitialInterval());
     clusterConsulProperties.setClusterClientKey(hostInfo.getIpAddress());
     clusterConsulProperties.setClusterNodes(clusterConsulConfiguration.getClusterNodes());
 
